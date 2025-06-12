@@ -49,7 +49,7 @@ pip install -r requirements.txt
 
 ---
 
-## 💻 **Como executar a API e Acessando o Site**
+## 💻 **Como executar a API e Acessar o Site**
 
 ### 1. **API Principal** 
 
@@ -193,7 +193,7 @@ Remove um arquivo de imagem com base no `filename` fornecido via query string.
 #### `allowed_file(filename)`
 
 Verifique se as imagens estão na extensão correta. 
-[Tipos de arquivos permitidos](#tipos-de-arquivos-permitidos-para-upload).
+Tipos de arquivos permitidos.
 
 ---
 
