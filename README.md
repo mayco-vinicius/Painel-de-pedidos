@@ -1,4 +1,4 @@
-# 📄 Documentação: Status de pedido dos clientes 1031
+# 📄 Documentação: Painel de pedidos da loja 1031
 
 Este sistema busca os status de cada pedido feito na PPL utilizando o programa base (5-192, feito em COBOL). Esses dados são enviados para uma API desenvolvida em Python, que grava todas as informações coletadas no banco de dados `api_teste`.
 
@@ -49,7 +49,7 @@ pip install -r requirements.txt
 
 ---
 
-## 💻 **Como executar a API e Acessar o Site**
+## 💻 **Como executar a API e Acessando o Site**
 
 ### 1. **API Principal** 
 
@@ -73,34 +73,41 @@ No navegador, digite:
 
 ## routes.py
 
-Está aplicação Flask fornece um painel web para exibir o status de pedidos e gerenciar imagens de campanhas promocionais (upload e remoção). Ela também integra uma função de recepção de dados de um sistema externo (COBOL) para gravação em banco de dados.
+Esta aplicação Flask serve como um **painel abragente** para monitorar o status de pedidos, gerenciar campanhas promocionais (incluindo upload e romeção de imagens e vídeos), e atuar como um ponto de integração para dados externos. Ela recebe informações de um sistema COBOL e as persiste em um banco de dados MySQL.
 
 ---
 
 ### 🗄️ Estrutura de Arquivos
 
-- `app.py` - Arquivo principal da aplicação Flask.
-- `grava_banco.py` - Módulo externo responsável por gravar dados vindos do COBOL no banco de dados.
-- `concectar_mysql.py` - Módulo externo para realizar conexão com o MySQL.
-- `templates/index.html` - Página principal para acompanhar os pedidos.
-- `templates/painel.html` - Página de administração das campanhas.
-- `static/img/campanha1`, `static/img/campanha2` - Pastas onde imagens são salvas.
+A estrutura de arquivos e diretórios da aplicação é orfanizada da seguinte forma:
+
+- `routes.py`: O **arquivo principal** de aplicação Flask, contendo a lógica de roteamento e as funções das views.
+- `grava_banco.py`: Um módulo auxiliar responsável por **persistir dados** recebidos do sistema COBOL no banco de dados.
+- `concectar_mysql.py`: Um módulo dedicado ao **gerenciamento da conexão** com o banco de dados MySQL.
+- `templates;`: Diretório que armazena os templates HTML da aplicação.
+    - `templates/index.html`: A **página inicial** que exibe o acompanhamento dos pedidos.
+    - `templates/painel.html`: A interface de **administração** para gerenciar companhas e vídeos.
+- `static`: Diretório para arquivos estáticos como imagens, vídeos e scripts JavaScript.
+    - `static/img/campanha1`: Pasta para imagens da Campanha 1.
+    - `static/img/campanha2`: Pasta para imagens da Campanha 2.
+    - `static/video`: Pasta para vídeos sobre a empresa.
+    - `static/js/script.js`: Script JavaScript que gerencia a exibição e interatividade da tabela de pedidos, campanhas e vídeos na página inicial.
+    - `static/js/painel.js`: Script JavaScript responsável pela funcionalidade de remoção de imagens e vídeos no painel de administração.
 
 ### 📂 Estrutura de Diretórios Criada Automaticamente
 
-Ao iniciar a aplicação, os diretórios:
+Para garantir a funcionalidade de upload e armazenamento, os seguintes diretórios são **criados automaticamente** na inicialização da aplicação, caso não existam:
 
 - `static/img/campanha1`
 - `statis/img/campanha2`
-
-São automaticamente criados se não existirem.
+- `static/video`
 
 ### ✅ Tipos de Arquivos Permitidos para Upload
 
-- `.png`
-- `.jpg`
-- `.jpeg`
-- `.gif`
+A aplicação aceita o upload dos seguintes tipos de arquivos:
+
+- Imagens: `png`, `jpg`, `jpeg`, `gif`
+- Vídeos: `mp4`
 
 ### 💻 Endpoints da Aplicação
 
@@ -108,16 +115,34 @@ São automaticamente criados se não existirem.
 
 **Descrição**:
 
-Carrega a página com a lista de pedidos filtrados pela data e hora atual. Também carrega imagens de campanhas organizadas por pasta.
+Este endpoint carrega a **página principal** da aplicação, exibindo a lista de pedidos, imagens de campanhas promocionais e um vídeo institucional da empresa.
 
-**Funcionalidade**:
+**Funcionalidade Detalhada**:
 
-- Consulta pedidos recentes do banco de dados com base na hora do pedido.
-- Mostra apenas os pedios que ainda não foram faturados.
-- Filtra os pedidos por prioridade.
-- Mostra os pedidos em ordem decrescente respeitando a prioridade de cada pedido.
-- Exibe imagens das campanhas.
-- Reseta o campo `RETIRAR` de `sim` para `nao` apenas de um IP em especifico.
+- `Consulta de Pedidos`: Realiza uma consulta ao banco de dados (`statu_venda`) para buscar pedidos recentes com base na data e hora.
+
+- `Filtragem de Pedidos`:
+    - Exibe apenas os pedidos com `DATA` igual à data atual.
+    - Filtra pedidos onde `FATURADO` é igual a `X` (indicando que o pedido ainda não foi faturando).
+    - A hora do pedido deve estar dentro desses padrões:
+        - Para pedidos com `STATUS_PEDIDO = 'RETIRAR'`: `HORA_PEDIDO` deve estar no prazo de 30 minutos antes da hora atual.
+        - Para outros `STATUS_PEDIDO` : `HORA_PEDIDO` deve ser 1 hora antes da hora atual e 1 hora depois da hora atual.
+
+- `Priozação e Ordenação`:
+    - Os pedidos são ordenados por prioridade baseados no `STATUS_PEDIDO`:
+        - `RETIRAR` (maior prioridade - vizualiação verde)
+        - `CONFERIDO` (visualização azul)
+        - `SEPARADO` (visualização amarela)
+        - `SEPARACAO`: (visualização laranja)
+        - Outros status (menor prioridade - visualização vermelha)
+    - Dentro do mesmo nível de prioridade, os pedidos são ordenados por `NUM_PEDIDO` em **ordem decrescente**.
+
+- `Exibição de Mídia`:
+    - Apresenta um **vídeo** sobre a empresa.
+    - Exibe **imagens das campanhas** promocionais, organizadas por suas respectivas pastas (`campanha1`, `campanha2`).
+
+- Reset de Campo `RETIRAR`:
+    - Se a requisição for originada do **endereço IP 192.9.200.231**, o campo `RETIRAR` de todos os pedidos que estão com `'sim'` é automaticamente **resetado para** `'nao'` no banco de dados.
 
 ---
 
@@ -125,21 +150,33 @@ Carrega a página com a lista de pedidos filtrados pela data e hora atual. Tamb�
 
 **Descrição**:
 
-Recebe dados JSON via POST de do sistema COBOL e grava no banco de dados.
+Este endpoint é dedicado à **recepção de dados JSON** enviados via requisição POST de um sistema COBOL. Os dados recebidos são processados e gravados no banco de dados utilizando o módulo `grava_banco.py`
 
-**Entrada:**
+**Entrada (Exemplo JSON):**
 
 ```
 {
-    "chave1": "valor1",
-    ...
+    'COD-VEND': '',
+    'PEDIDO-SEPARADO': '',
+    'NUM-PEDIDO': '',
+    'RETIRA': '', 
+    'NOME-CLIENTE': '', 
+    'COD-CLIENTE': '', 
+    'BOLETO': '', 
+    'DESCRICAO': '', 
+    'SEPARADOR': '', 
+    'HORA-NOTA': '', 
+    'HORA-INI-CONFERENCIA': '', 
+    'HORA-INI-SEPARACAO': '', 
+    'NOTA-FATURADA': '', 
+    'DATA-PEDIDO': ''
 }
 ```
 
 **Saída**:
 
-- `"ok"` com status 200 em caso de sucesso.
-- JSON de erro com status `500` em caso de falha.
+- **Sucesso**: Retorna a string `"ok"` com um `status HTTP 200`.
+- **Falha**: Retorna um **JSON de erro** (`{"error": "Erro ao processar dados"}`) com um **status HTTP 500**. Erro são logados no console.
 
 ---
 
@@ -147,7 +184,7 @@ Recebe dados JSON via POST de do sistema COBOL e grava no banco de dados.
 
 **Descrição**:
 
-Carrega a interface de administração para adicionar novas campanhas e visualizar imagens enviadas por campanha.
+Carrega a **interface de administração** da aplicação. Nesta página, os usuários podem adicionar novas campanhas, carregar vídeos e visualizar todas as imagens e vídeos já enviados, organizados por campanha.
 
 ---
 
@@ -155,18 +192,24 @@ Carrega a interface de administração para adicionar novas campanhas e visualiz
 
 **Descrição**:
 
-Permite envio de múltiplas imagens via formulário. Alterna entre as pastas `campanha1` e `campanha2`.
+Permite o **upload de múltiplos arquivos** (imagens ou vídeos) através de um formulário. O sistema alterna automaticamente entre as pastas `campanha1`, `campanha2` para imagens e salva vídeos em `static/video`.
 
-**Validações**:
+**Validações e Comportamento**:
 
-- Verifica se o arquivo existe e se é permitido.
-- Alterna pasta de upload entre campanhas.
-- Usa `secure_filename()` para evitar problemas de segurança.
+- **Verificação de Anexo**: Verifica se um arquivo foi enviado no formulário (`arquivo` no `request.files`).
+- **Seleção de Arquivos**: Garante que pelo menos um arquivo foi selecionado no input do formulário.
+- **Extensão Permitida**: Confere se a extensão de cada arquivo é uma das permitidas
+- **Nome seguro**: Utiliza a função `secure_filename()` do Werkzeug para sanitizar os nomes dos arquivos, prevenindo vulnerabilidades de seguraça.
+- **Determinação da Pasta de Destino**:
+    - Se o arquivo for um `.mp4`, ele é salvo em `static/video`.
+    - Para imagens (`.png`, `.jpg`, `.jpeg`, `.gif`), a pasta de destino alterna entre `static/img/campanha1` e `static/img/campanha2`.
+- **Tratamento de Erros de Gravação**: Se ocorrer um erro durente a gravação de um arquivo, o erro é registrado e o upload do arquivo é contabilizado como falha.
 
 **Mensagens Flask**:
 
-- Sucesso ou erro por arquivo.
-- Feedback agregado ao final.
+- São exibidas mensagens de **sucesso ou erro** (usando `flash`) para o usuário, indicando o resultado de cada upload.
+
+- Um **feedback agregado** é fornecido ao final do processo, informando o total de arquivos enviados com sucesso e o número de erros, se houver.
 
 ---
 
@@ -174,55 +217,84 @@ Permite envio de múltiplas imagens via formulário. Alterna entre as pastas `ca
 
 **Descrição**:
 
-Remove um arquivo de imagem com base no `filename` fornecido via query string.
+Permite a **remoção de um arquivo** (imagem ou vídeo) do servidor com base no nome do arquivo, tipo e nome da pasta fornecedos via query string.
 
 **Parâmetros**:
 
-- `filename` - Nome do arquivo a ser removido.
+- `filename`: O nome completo do arquivo a ser removido (ex: `minha_imagem.jpg`).
+- `file_type`: O tipo de arquivo, podendo ser `imagem` ou `video`.
+- `folder`: O nome da subpasta onde o arquivo está localizado (ex: `campanha1` ou `video`)
 
 **Comportamento**:
 
-- Busca em todas as pastas de campanha.
-- Remove sse encontrar.
-- Exibe mensagens de sucesso ou erro.
+- Valida a presença dos parâmetros necessários.
+- Constrói o **caminho completo** do arquivo com base no `file_type` e `folder`.
+    - Para `file_type='image'`, busca em `static/img/<folder_name>`.
+    - Para `file_type='video'`, busca em `static/video`.
+- Verifica se o arquivo existe no caminho especificado.
+- Se o arquivo for encontrado, ele é **removido** do sistema de arquivos.
+- Mensagens de sucesso ou erro (incluido "arquivo não encontrado" ou erros de permissão) são impressas no console do servidor.
+- Após a operação, o usuário é **redirecionado de volta para o painel** de administração.
 
 ---
 
 ### 🔁 Funções Auxiliares
 
 #### `allowed_file(filename)`
+**Descrição:**
 
-Verifique se as imagens estão na extensão correta.
+Esta função auxiliar verifica se a extensão do arquivo fornecido (`filename`) está na lista de <ins>tipos de arquivos permitidos</ins>.
+
+**Retorno**:
+
+- `True` se a extensão do arquivo for permitida.
+- `False` caso contrário.
 
 ---
 
 #### `get_campaing_imagens()`
 
-Retorna um dicionário contendo todas as imagens organizadas por pasta de campanha.
+**Descrição**:
+
+Esta função escaneia os diretórios de campanhas e vídeos e retorna um dicionário estruturado contendo todos os arquivos de mídia encontrados. Ela distingue entre imagens de campanha (organizadas por pasta) e vídeos.
 
 **Exemplo de retorno**:
 
 ```
 {
-    "campanha1": [{"filename": "img1.png", "path": "static/img/campanha1/img1.png"}, ...],
-    "campanha2": [{"filename": "img2.png", "path": "static/img/campanha2/img2.png"}, ...]
+    "images": {
+        "campanha1": [
+            {"filename": "img1.png", "path": "/static/img/campanha1/img1.png", "type": "image"},
+            {"filename": "banner.jpeg", "path": "/static/img/campanha1/banner.jpeg", "type": "image"}
+        ],
+        "campanha2": [
+            {"filename": "promo.jpg", "path": "/static/img/campanha2/promo.jpg", "type": "image"}
+        ]
+    },
+    "videos": [
+        {"filename": "empresa.mp4", "path": "/static/video/empresa.mp4", "type": "video"}
+    ]
 }
 ```
 
 ---
 
-### 🖥️ Lógica de Consulta de Pedidos
+### 🖥️ Lógica de Consulta de Pedidos (`/` endpoint)
 
-Consulta na tabela `status_venda` usando os seguintes critérios:
+A consulta de pedidos é realizada na tabela `status_venda` do banco de dados, seguindo critérios específicos para garantir a exibição dos pedidos mais relevantes e urgentes:
 
-- Data atual.
-- Pedidos não faturados ('X' significa que o pedido ainda não foi faturado).
-- Pega os pedidos que foram conferidos a menos de 30 minutos da hora atual.
-- Hora do pedido entre
-    - `HORA_ATUAL - 2 horas` e `HORA_ATUAL + 1 hora`
-- Se `STATUS_PEDIDO` for `RETIRAR`, aplica uma janela de tempo mais curta.
-- Adicona uma prioridade ao status de cada pedido.
-- Mostra cada pedido de forma decrescente referente a sua prioridade.
+- **Filtro por Data e Hora**:
+    - A consulta considera a **data atual** (`DATA = %s`)
+    - Para pedidos com `STATUS_PEDIDO = 'RETIRAR'`, a `HORA_PEDIDO` deve estar entre 30 minutos antes da hora atual e 30 minutos depois da hora atual.
+    - Para os demais status de pedidos, a `HORA_PEDIDO` deve estar entre 1 hora a menos da hora atual e 1 hora depois da hora atual.
+- **Pedidos Não Faturados**: Apenas pedidos com `FATURADO = 'X'` (indicando não faturado) são incluídos.
+- **Prioridade dde Status**: Os pedidos são ordenados por prioridade de `STATUS_PEDIDO` usando uma função `CASE`:
+    - `RETIRAR` (prioridade 1)
+    - `CONFERINDO` (prioridade 2)
+    - `SEPARADO` (prioridade 3)
+    - `SEPARACAO` (prioridade 4)
+    - Qualquer outro status (prioridade 5)
+- **Ordenação Secundária**: Dentro de cada grupo de prioridade, os pedidos são ordenados por `NUM_PEDIDO` em **ordem decrescente**.
 
 **Ordenação**:
 
@@ -243,45 +315,51 @@ Este script foi desenvolvido para registrar, atualizar e remover informações s
 
 `criar_tabela()`
 
-Verifica se a tabela `status_venda` existe. Caso não exista, ela é criada com os seguintes campos:
+Verifica se a tabela `status_venda` existe no banco de dados. Caso não exista, ela é **criada automaticamente** com a seguinte estrutura:
 
-- `DATA`: Data do pedido
-- `CODIGO_VENDEDOR`: Identificador do vendedor
-- `STATUS_PEDIDO`: Status atual do pedido
-- `NUM_PEDIDO`: Número do pedido (Primary Key)
-- `HORA_NOTA`: Hora em que o pedido foi emitido
-- `RETIRA`: Indica se o pedido é retirado na loja
-- `HORA_PEDIDO`: Hora do registro
-- `NOME_CLIENTE`: Nome do cliente
-- `CODIGO_CLIENTE`: Código do cliente
-- `TIPO_PAGAMENTO`: Tipo de pagamento (`pix`, `boleto`, etc)
-- `NOME_SEPARADOR`: Quem está separando o pedido e quem está conferindo, junto com a hora de que começou a separação ou conferencia
-- `RETIRAR`: Se o pedido está pronto para retirada
-- `FATURADO`: Se o pedido já foi conferido pelo cliente e teve a nota faturada
-- `TEMPO`: Mostra quando por quanto tempo um pedido esta sendo separado
+- `DATA`: Data do pedido (`DATE`)
+- `CODIGO_VENDEDOR`: Identificador do vendedor (`INT`)
+- `STATUS_PEDIDO`: Status atual do pedido (`VARCHAR(50)`)
+- `NUM_PEDIDO`: Número do pedido (Chave Primária `INT PRIMARY KEY`)
+- `HORA_NOTA`: Hora em que o pedido foi emitido (`VARCHAR(5)`)
+- `RETIRA`: Indica se o pedido é retirado na loja (`VARCHAR(2)`)
+- `HORA_PEDIDO`: Hora do registro no banco (`TIME`)
+- `NOME_CLIENTE`: Nome do cliente (`VARCHAR(255)`)
+- `CODIGO_CLIENTE`: Código do cliente (`INT`)
+- `TIPO_PAGAMENTO`: Tipo de pagamento (ex:`pix` ou `boleto`. - `VARCHAR(6)`)
+- `NOME_SEPARADOR`: Quem está separando o pedido ou quem está conferindo, junto com a hora de que começou a separação ou conferencia (`VARCHAR(30)`)
+- `RETIRAR`: Se o pedido está pronto para retirada (`VARCHAR(3)`)
+- `FATURADO`: Se o pedido já foi conferido pelo cliente e teve a nota faturada (`VARCHAR(45)`)
+- `TEMPO`: Mostra por quanto tempo um pedido esta sendo separado (`VARCHAR(4)`)
 
 ---
 
 `deletar_dados()`
-Remove registro da tabela `status_venda` **criados no dia atual** com hora superior a 30 minutos atrás **e** cujo status não seja "`RETIRAR NO CAIXA`".
+
+Remove registro da tabela (`status_venda`) que foram **criados no dia atual**, têm mais de **30 minutos** (em relação à `HORA_PEDIDO` do registro) e **não** possuem o `STATUS_PEDIDO` como "`RETIRAR NO CAIXA`". Esta função ajuda na limpeza de dados antigos e irrelavantes.
 
 ---
 
 `formatar_hora_banco(hora_valor)`
 
-Converte o valor `HORA_PEDIDO` vindo do banco (em vários formatos possíveis) para o tipo `timedelta`, que facilita comparações entre horários.
+Função auxiliar que converte valores da hora vindo do banco de dados (que podem ser `timedelta`, `time` ou `str` em diferentes formatos) para o tipo `timedelta`. Isso padroniza o formato e facilita comparações de tempo. Retorna `None` se a conversão falhar.
 
 ---
 
 `gravar_banco(...)`
 
-Insere um novo registro na tabela `status_venda` como os dados processados do sistema COBOL, se ele ainda não existir.
+Insere um novo registro na tabela `status_venda` como os dados processados do sistema COBOL.
+
+A lógica de inserção varia ligeiramente com base no `STATUS_PEDIDO` do pedido:
+    - **'SEPARAR'**: Insere o registro e preenche o campo `TEMPO` com a `hora_separacao`.
+    - **'SEPARACAO'**: Calcula o `tempo` decorrido desde o início da separação (`hora_separacao`) e o anexa ao `NOME_SEPARADOR`.
+    - **Outros status**: Insere o registro com os campos fornecidos.
 
 ---
 
 `verificar_dados(...)`
 
-Verifica se o registro com a combinação específica (`CODIGO_VENDEDOR`, `STATUS_PEDIDO`, `NUM_PEDIDO`, `CODIGO_CLIENTE`, `TEMPO`) já existente no banco de dados.
+Verifica a existência de um registro no banco de dados com base em uma combinação de `CODIGO_VENDEDOR`, `STATUS_PEDIDO`, `NUM_PEDIDO`, `CODIGO_CLIENTE` e `TEMPO`.
 - se **existe** o `mudou` recebe `'nao'`;
 - caso **não exista** o `mudou` recebe `'sim'`.
 
@@ -289,51 +367,68 @@ Verifica se o registro com a combinação específica (`CODIGO_VENDEDOR`, `STATU
 
 `atualizar_dados(...)`
 
-Atualiza o registro existente no banco se o `STATUS_PEDIDO` foi alterado. Dependendo do novo status, também atualiza campos como `STATUS_PEDIDO` e `FATURADO`.
+Atualiza o registro existente na tabela `status_venda` se houver uma alteração no `STATUS_PEDIDO` ou no status `FATURADO`.
+- Compara o `STATUS_PEDIDO` e `FATURADO` atual com os gravador no banco de dados.
+- Se o `STATUS_PEDIDO` mudou:
+    - Para `RETIRAR`: Atualiza o status, anexa a `hora_conferecia` ao `NOME_SEPARADOR` e define `RETIRAR` como `sim`.
+    - Para `SEPARACAO`: Calcula o tempo decorrido da separação (`TEMPO` do banco ou `hora_separacao` se o `TEMPO` estiver vazio) e o anexa ao `NOME_SEPARADOR`. Define `RETIRAR` como `'nao'`.
+    - Para `CONFERINDO` (ou outros status): Anexa a `hora_conferencia` ao `NOME_SEPARADOR` se `hora_conferencia` não estiver vazia, e define `RETIRAR` como `'nao'`.
+- Se o `STATUS_PEDIDO` for **'SEPARAR'** e o `TEMPO` **precisar seu atualizado**: Apenas o campo `TEMPO` é atualizado.
+- Se apenas o `FATURADO` **mudou** ( e o `STATUS_PEDIDO` for **'RETIRAR'**): Atualiza apenas o status `FATURADO`.
+- Retorna `'sim'` se a atualização ocorrer, e `'nao'` caso contrário.
 
 ---
 
 `deletar_info(...)`
 
-Remove manualmente um registro específico da tabela com base em `CODIGO_VENDEDOR`, `NUM_PEDIDO` e `CODIGO_CLIENTE`. Isso é feito quando há uma descrição no pedido - indicando que o pedido foi cancelado ou vai devolver ao estoque.
+Remove um registro específico da tabela `status_venda` com base no `CODIGO_VENDEDOR`, `NUM_PEDIDO` e `CODIGO_CLIENTE`. Esta função é acionada quando dado COBOL contém uma `DESCRICAO`, o que geralmente indica um cancelamento ou devolução ao estoque do pedido.
 
 ---
 
 `filtrar_dados(dados_cobol)`
 
-Recebe um dicionário com os dados vindos do sistema COBOL e executa a lógica:
+Recebe um dicionário com os dados brutos vindos do sistema COBOL e executa a lógica principal de processamento:
 
-1. Ignora pedidos com `COD-VEND == 99999` ou `NUM-PEDIDO == 000000`.
-2. Mapeia os status antigos(`ASEPARAR`, `SEPARACAO`, etc.) para os novos padronizados (`SEPARAR`, `SEPARACAO`, etc.).
-3. Converte tipo de pagamento(`x` -> `pix`, `b` -> `boleto`).
-4. Busca a `HORA-INI-SEPARACAO` e a `HORA-INI-CONFERENCIA`.
-5. Verifica se a nota foi faturada ou não
-6. Busca a data do pedido
-7. Verifica se já existe o registro:
-    - Se **não** existir: grava o pedido novo
-    - Se existir **mas** o status mudou ou faturamento mudou faz a atualização no banco de dados
-    - Se houver `DESCRICAO`, o pedido será deletado da tabela
+1. **Filtra dados irrelevantes**: Ignora pedidos onde `COD-VEND` é `99999` ou `NUM-PEDIDO` é `000000`.
+2. Verifica `DESCRICAO`:
+    - Se `DESCRICAO` **não estiver vazia**: Chama `deletar_info()` para remover o pedido.
+    - Se `DESCRICAO` **estiver vazia**: Procede com o processamento do pedido.
+3. **Mapeamento de Status**: Converte status de pedidos antigos (`ASEPARAR`, `SEPARADOS`, `CONFERENCIA`) para seus equivalentes padronizados (`SEPARAR`, `SEPARADO`, `CONFERENCIO`). `SEPARACAO` e `RETIRAR` são mantidos.
+4. **Definição de** `RETIRAR`: Baseia o valor inicial de `RETIRAR` (`'sim'` ou `'nao'`) no `STATUS_PEDIDO`.
+5. **Conversão de** `TIPO_PAGAMENTO`: Converte códigos de pagamento (`'x'` para `'pix'`, `'b'` para `'boleto'`).
+6. **Extração de Horas**: Obtém `HORA-INI-CONFERENCIA`, `HORA-INI-SEPARACAO` (se aplicável), `HORA-NOTA`, `NOME-CLIENTE`, `SEPARADOR`, `NOTA-FATURADA` e `DATA-PEDIDO` dos dados COBOL.
+7. **Verificação e Ação no Banco**:
+    - Chama `verifica_dados()` para checar a existência e o estado do pedido.
+    - Se o pedido **não existe** ou se o `STATUS_PEDIDO` ou `FATURADO` **tiverem mudado**, tenta `atualizar_dado()`.
+    - Se `atualizar_dados()` não efeticar a mudança (ou seja, o registro não existia ou não foi atualizado), então `gravador_banco()` é chamado para inserir o novo registro.
 
 ---
 
 `main(dados_cobol)`
 
-Ponto de entrada do script:
+É o ponto de entrada principal do script:
 
-1. Loga os dados recebidos
-2. Cria a tabela se não existir
-3. Processa os dados com `filtrar_dados()`
-4. Deleta dados antigos com `deletar_dados()`
+1. **Log de Entrada**: Registra os dados COBOL recebidos para fins de depuração e monitoramento.
+2. **Criação da Tabela**: Chama `criar_tabela()` para garantir que a tabela `status_venda` exista.
+3. **Processamento de Dados**: Invoca `filtrar_dados()` para remover registros desatualizados.
 
 ### 🖥️ Fluxo Geral
 ```
-Dados COBOL ➜ main()
-                └── criar_tabela()
-                └── filtrar_dados()
-                        ├── verifica_dados()
-                        ├── atualizar_dados() ou gravar_banco()
-                        └── deletar_info()
-                └── deletar_dados()  (limpeza de dados antigos)
+Dados COBOL 
+      ⬇
+main(dados_cobol)
+      ├── Logging (registra dados recebidos)
+      ├── criar_tabela()          (garante que a tabela existe)
+      ├── filtrar_dados()         (lógica de processamento principal)
+      │      ├── Condicional: DESCRICAO vazia?
+      │      │    ├── SIM (processa pedido)
+      │      │    │    ├── verifica_dados()        (checa se o registro e status existem)
+      │      │    │    └── Condicional: Registro mudou ou não existe?
+      │      │    │          ├── SIM: atualizar_dados()  (tenta atualizar o registro existente)
+      │      │    │          └── SE atualizar_dados RETORNOU 'nao': gravar_banco() (insere novo registro)
+      │      │    └── NAO (ignora e deleta)
+      │      │          └── deletar_info()          (remove o pedido)
+      └── deletar_dados()         (limpa registros antigos do dia)
 
 ```
 
@@ -341,7 +436,7 @@ Dados COBOL ➜ main()
 
 ## index.html
 
-Este template HTML é utilizado para exibir o **acompanhamento dos pedidos**, apresentando visualemnte o status de cada pedido e imagens promocionais, com destaque visual para facilitar a identificação por cores.
+Este template HTML é utilizado para exibir o **acompanhamento dos pedidos**, apresentando visualmente o status de cada pedido, juntamente com campanhas promocionais de imagens e vídeos, com destaque visual para facilitar a identificação por cores.
 
 ---
 
@@ -361,10 +456,10 @@ Este template HTML é utilizado para exibir o **acompanhamento dos pedidos**, ap
 #### Logo
 
 ```
-<img src="{{ url_for('static', filename='img/logo.png') }} ...">
+<img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo PPL" class="logo">
 ```
 
-Exibe o logotipo da PPL.
+Exibe o logotipo da PPL, centralizado na parte superiro da página.
 
 ---
 
@@ -380,23 +475,23 @@ Exibe o logotipo da PPL.
 </div>
 ```
 
-Indica visualmente o significado de cada cor usada nos pedidos (comportamento definido por CSS):
+Este elemento é uma div que contém spans vazios, estilizados via CSS para funcionar como uma **legenda visual** para os diferentes status de pedidos na tabela. As cores e seus significados são:
 
-- `Verde`: Pedido pronto para retirada no caixa.
-- `Azul`: Em Conferência.
-- `Amarelo`: Separado.
-- `Laranja`: Em Separação.
-- `Vermelho`: A Separar.
+- `Verde`: Pedido pronto para retirada.
+- `Azul`: Pedido em Conferência.
+- `Amarelo`: Pedido Separado.
+- `Laranja`: Pedido em Separação.
+- `Vermelho`: Pedido a Separar.
 
 --- 
 
 #### Áudio de Notificação
 
 ```
-<audio id="notificacao" src="caminho ate a notificação"></audio>
+<audio id="notificacao" src="{{ url_for('static', filename='effect_som/notificacao.mp3') }}" preload="auto"></audio>
 ```
 
-Som de notificação que e ativado via JavaScript para notificar quando um pedido pode ser retirado no caixa.
+Um elemento de áudio que carrega o arquivo `notificacao.mp3`. Ele é configurado para `preload="auto"` para estar pronto para reprodução. A reprodução deste áudio é **ativada via JavaScript** para notificar o usuário quando um pedido está pronto para retirar no caixa.
 
 #### 📂 Tabela de Pedidos
 
@@ -404,15 +499,19 @@ Som de notificação que e ativado via JavaScript para notificar quando um pedid
 <table class="tabela-pedidos" id="tabelaPedidos">...</table>
 ```
 
-- Cabeçalho (`thead`):
-    - PEDIDO, NOME CLIENTE, SEPARADOR/CONFERENTE, STATUS.
-- Corpo(`tbody`):
-    - Utiliza loop `for` do Jinja2 para iterar sobre a viriável `dados`.
-    - Cada linha (`<tr>`) recebe uma **classe de cor** baseada no `STATUS_PEDIDO`.
+A tabela principal que exibe os detalhes dos pedidos:
+
+- Cabeçalho (`thead` com `id="cabecalhoTabela"`):
+    - Define as colunas da tabela: **PEDIDO, PEDIDO EMITIDO, NOME CLIENTE, SEPARADOR/CONFERENTE** e **STATUS.**
+- Corpo(`tbody` com `id="corpoTabela"`):
+    - Utiliza um **loop** `{% for item in dados %}` **do Jinja2** para iterar sobre a viriável `dados` (que contém os registro de pedidos do banco de dados).
+    - **Cada linha** (`<tr>`) representa um pedido e recebe uma **classe de cor** (verde, azul, amarelo, laranja e vermelho) baseada no `item.STATUS_PEDIDO`, refletindo a legenda.
         ```
-        {% if 'RETIRAR NO CAIXA' in item.STATUS_PEDIDO %}verde{% elif ... %}
+        <tr class="{% if 'RETIRAR' in item.STATUS_PEDIDO %}verde{% elif 'CONFERINDO' in item.STATUS_PEDIDO %}azul{% elif 'SEPARADO' in item.STATUS_PEDIDO %}amarelo{% elif 'SEPARACAO' in item.STATUS_PEDIDO %}laranja{% else %}vermelho{% endif %}" ...>
         ```
-    - A propriedade `data-retirar="sim"` ou `"nao"` também é adicionada para lógica JS adicional.
+    - Uma propriedade `data-retirar` é adicionada a cada linha, com valor `"sim"` se `item.RETIRAR == 'sim'` e `'nao'` caso contrário, para ser utilizada pela lógica JavaScript.
+    - As células (`<td>`) exibem os dados correspondentes: `NUM_PEDIDO`, `HORA_NOTA`, `NOME_CLIENTE`, `NOME_SEPARADOR` e `STATUS_PEDIDO`. A coluna `NOME_CLIENTE` possui a classe `cliente`.
+    - Caso não haja nenhum pedido na variável `dados`, uma linha com a mensagem "Nenhum pedido encontrado." é exibida (`{% else %}` do Jinja2).
 
 ---
 
@@ -422,10 +521,16 @@ Som de notificação que e ativado via JavaScript para notificar quando um pedid
 <div class="imagens-campanha">...</div>
 ```
 
-Se `imagens_campanha` estiver presente, são exibidas as imagens conforme o dicionário:
+Um contêiner (`div`) com o `id="media-slides-container"` e a classe `hidden` (indicando que sua visibilidade é controlada por JavaScript). Esta contêiner funciona como um **carrossel de mídia**, exibindo vídeos e imagens de campanhas.
 
-- **Chave**: nome da campanha (ex: `campanha1`, `campanha2`).
-- **Valor**: lista de objetos com `path` e `filename`.
+- Vídeos:
+    - Itera sobre `all_media.videos`. Cada vídeo é encapsulado em uma `div` com `class="carousel-slide-item"` e `data-type="video"`.
+    - Utiliza a tag `<video>` com atributos `controls`, `muted`, `playsinline` e `preload="auto"` para exibir o vídeo. A `scr` é definida dinamixamente pelo Jinja2.
+- Imagens de campanha 1:
+    - Itera sobre `all_media.images.campanha1`. Cada imagem está em uma `div` com `class="carousel-slide-item"`, `data-type='image'` e `data-compaign-floder="campanha1"`.
+    - Exibe a imagem usando a tag `<img>` com `src` e `alt` definidor dinamicamente.
+- Imagens da campanha2:
+    - Itera sobre `all_media.imagens.campanha2`. Estrutura similar às imagens da campanha 1, mas com `data-campaign-floder="campanha2"`.
 
 ---
 
@@ -434,235 +539,358 @@ Se `imagens_campanha` estiver presente, são exibidas as imagens conforme o dici
 <div class="pagination" id="pagination"></div>
 ```
 
-Esse elemento será utilizado dinamicamente pelo JavaScript para poder fazer a paginação entre as páginas da tabela.
+Um elemento `div` com a classe `pagination` e `id=pagination`. Este elemento será utilizado **dinamicamente pelo JavaScript** (no `script.js`) para criar e gerenciar os controler de paginação da tabela de pedidos, permitindo a navegação entre múltiplas páginas de resultados.
+
+#### 💻 Script JavaScript
+
+```
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+```
+
+Inclui o arquivo JavaScript `script.js`, que é responsável pela lógica de interatividade da página, incluindo:
+    - Gerenciamento da tabela de pedidos (paginação, filtros).
+    - Controle do áudio de notificação.
+    - Controle do carrossel de mídia (exibição e transição de vídeos e imagens).
 
 ## painel.html
 
-Este template é responsável por rederizar a interface de **gerenciamento de campanhas**. Ele permite que o usuário:
-
-- Façam upload de novas imagens.
-- Visualizem as campanhas existentes.
-- Excluam imagens individualmente.
+Este template é responsável por rederizar a interface de **gerenciamento de campanhas e vídeos**. Ele permite que o usuário faça o upload de novos arquivos de mídia, visualize as mídias existentes (imagens e vídeos) e exclua itens individualmente.
 
 ---
 
 ### 📂 Estrutura do Arquivo
 
-- `<head>`
+- `<head>`:
     - **CSS local**: `painel.css` é carregado do diretório `/static/css/`.
     - **Favicon**: ícone personalizado do site (`fiveicon.png`).
-    - **FontAwesome**: biblioteca de ícones.
+    - **Font Awesome**: Linka a biblioteca de ícones Font Awesome para utilizar ícones visuais na interface.
 
-- `<body>`
-    - **Navegação** (`<nav>`)
+- `<body>`:
+    - Contém todo o conteúdo visível da aplicação, aninhado dentro da tag `<main>`.
 
 ### 📄 Formulário de Upload de Imagens
 ```
 <form action="/upload" method="post" enctype="multipart/form-data">
 ```
 
-- Permite o envio de múltiplas.
-- Envia via `POST` para a rota `/upload`.
+Este formulário permite o envio de arquivos de mídia para o servidor:
+- **Action**: Envia os dados via método `POST` para a rota `/upload`.
+- `enctype="multipart/form-data"`: necessário para upload de arquivos.
+- **Campo de Entrada de Arquivos**:
+    ```
+        <input type="file" id="arquivo" name="arquivo" multiple accept="image/*,video/*">
+    ```
+Permite selecionar **múltiplos arquivos (`multiple`)** e aceita tando **imagens** (`image/*`) quanto **vídeos** (`video/*`).
 
-### 🖼️ Secão de Imagens Salvas
+
+### 🖼️ Secão de Mídia Salvas
 ```
 <h2>Imagens Salvas</h2>
-<div class="imagens-campanha">
+<div class="all-media-display">
+    {# ... conteúdo dinâmico ... #}
+</div>
+```
+Esta seção exibe todas as imagens e vídeos que já foram enviados e estão armazenados no servidor.
+
+- **Contêiner** `all-media-display`: Uma nova classe para agrupar visualmente todos os itens de mídia.
+- **Verificação de Mídia**: Um bloco Jinja2 `{% if all_media %}` verifica se há alguma mídia para exibir. Se não houver, uma mensagem "Nenhuma mídia (imagens ou vídeos) encontrada." é mostrada.
+- **Exibição de Imagens por Campanha**:
+    ```
+    {% for folder_name, images_list in all_media.images.items() %}
+        {% if images_list %}
+            {% for imagem in images_list %}
+                <div class="media-item">
+                    <img class="campanhas" src="{{ imagem.path }}" alt="{{ imagem.filename }}">
+                    <i class="fa-solid fa-trash remover-media" data-filename="{{ imagem.filename }}" data-type="image" data-folder="{{ folder_name }}"></i>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endfor %}
+    ```
+- Itera sobre as subpastas de imagens (ex: `campanha1`, `campanha2`) e exibe cada imagem.
+- Cada imagem é renderizada com a tag `<img>` e envolta em uma `div` com a classe `media-item`.
+- Um **ícone de lixeira** (`fa-solid fa-tranh`) é adicionado ao lado de cada imagem, com atributos `data-filename`, `data-type="image"` e `data-folder` para identificar a imagem a ser deletada. Estes atributos são usados pelo JavaScript.
+
+- **Exibição de Vídeos**:
+
+```
+{% if all_media.videos %}
+    {% for video in all_media.videos %}
+        <div class="media-item">
+            <video controls preload="auto" style="width: 100%; height: 100%;">
+                <source src="{{ video.path }}" type="video/mp4">
+                Seu navegador não suporta a tag de vídeo.
+            </video>
+            <i class="fa-solid fa-trash remover-media" data-filename="{{ video.filename }}" data-type="video" data-folder="video"></i>
+        </div>
+    {% endfor %}
+{% endif %}
 ```
 
-- Verifica se existem imagens nas campanhas `campanha1` ou `campanha2`.
-- Usa loops `for` para percorrer as pastas e imagens:
-    - Casa imagem é renderizada com a tag `<img>`.
-    - Ao lado de cada imagem, há um ícone de lixeira com atributo `data-filename` para identificar a imagem a ser deletada (manipulado por JavaScript).
+- Itera sobre a lista de vídeos e exibe cada um.
+- Cada vídeo é incorporado usando a tag `<video>` com controles e `preload="auto"`, também envolto em um `div.media-item`.
+- Assim como nas imagens, um **ícone de lixeira** é fornecido para remoção, com `data-type="video"` e `data-folder="video"`.
+
+### 💻 Script JavaScript
+```
+<script src="{{ url_for('static', filename='js/painel.js') }}"></script>
+```
+
+Inclui o arquivo JavaScript `painel.js`, que é responsável por:
+- Manipular a lógica de exclusão de arquivos de mídia (imagens e vídeos) através dos atributos `data-*` nos ícones de lixeira.
+- Interagir com a rota `/remover_item` no backend para efetivar a remoção.
 
 # 👨‍💻 **Descrição dos scripts feitos em JavaScript**
 
 ## script.js
 
-Este scrript alterna automaticamente entre:
-
-- Tabelas de pedidos paginadas (com alertas sonoros caso haja itens a serem retirados no caixa).
-- Imagens das campanhas.
+Este script JavaScript é o motor da interface de acompanhamento de pedidos, orquestrando a exibição dinâmica de conteúdo. Ele gerencia a alternância programada entre a **tabela de pedidos paginada** (com alertas sonoros para pedidos prontos para retirada) e a **exibição de mídias de campanhas** (imagens e vídeos), seguindo um roteiro pré-definido.
 
 ### ⚙️ Constantes e Varíaveis Globais
 
-| Nome da Variável               | Função                                                            |
-| ------------------------------ | ----------------------------------------------------------------- |
-| `rowsPerPage`                  | Quantidade de linhas mostrada por pagina                          |
-| `currentPage`                  | Página atual da tabela                                            |
-| `tableBody`, `tableHeader`     | Referência aos elementos `<tbody>` e `thead` da tabela            |
-| `paginationDiv`                | Elemento onde os indicadores de página são renderizados           |
-| `imagensCampanhaDiv`           | Container com as imagens das campanhas                            |
-| `tituloPedidos`                | Título da seção de pedidos                                        |
-| `allRows`                      | Array com todas as linhas da tabela                               |
-| `autoSwapInterval`             | ID do `setInterval` usado para alternância                        |
-| `tabelaDisplayTime`            | Tempo que cada página da tabela permanece visível                 |
-| `imagemDisplayTime`            | Tempo que cada imagem permanece visível                           |
-| `somEmitido`                   | Evita tocar o som de retirada múltiplas vezes                     |
-| `currentImageIndex`            | Índice da imagem atualmente visível                               |
-| `isShowingTable`               | Indica se a tabela está sendo exibida atualmente                  |
-| `currentCampaign`              | Campanha atual (1 ou 2)                                           |
-| `campaignImages`               | Lista de imagens da campanha atual                                |
-| `imagesShownInCurrentCampaign` | Quantas imagens já foram exibidas nesta campanha                  |
-| `isFinishingTablePages`        | Se estamos finalizando a exibição das páginas da tabela           |
-| `audioNotificacao`             | Áudio que será tocado quando uma linha tiver `data-retirar="sim"` |
+| Nome da Variável / Constante | Função  
+|----------------------------- | ------- 
+| `rowsPerPage`                | `const`: Define o número de linhas de pedidos a serem exeibidas por páginas na tabela.
+| `tabelaDisplayTime`          | `const`: Duração, em milissegundos, que cada página da tabela permanece visível.
+| `imagemDisplayTime`          | `const`: Duração, em milissegundos, que cada imagem de campanha permanece visível.
+| `videoDisplayTime`           | `const`: Duração máxima, em milissegundos, que cada vídeo permanecerá visivel antes de avançar para o próximo estágio do roteiro (mesmo que o vídeo não tenha termiado).
+| `tableBody`                  | `const`: Referência ao elemento `<tbody>` da tabela de pedidos.
+| `tableHearder`               | `const`: Referência ao elmento `<thead>` da tabela de pedidos.
+| `paginationDiv`              | `const`: Elemento `div` onde os indicadores de página da tabela são renderizados.
+| `mediaSlidesContainer`       | `const`: Contêiner que engloba todos os slides de mídia (imgens e vídeos).
+| `tituloPedidos`              | `const`: Referência ao elemento `<h1>` que exibe o título da seção de pedidos.
+| `audioNotificacao`           | `const`: Referência ao elemento `<audio>` para reprodução do som de notificação.
+| `allRows`                    | `let`: Array que armazena todas as linhas (`<tr>`) da tabela de pedidos para manipulação de paginação e ordenação.
+| `allVideoMedia`              | `let`: Array de elementos DOM de todos os vídeos disponíveis no carrossel de mídia.
+| `allImageMedia_Campaign1`    | `let`: Array de elementos DOM de todas as imagens da `campanha1`.
+| `allImageMedia_Campaign2`    | `let`: Array de elementos DOM de todas as imagens da `campanha2`.
+| `currentPage`                | `let`: Acompanha a página atual que está sendo exibida na tabela.
+| `currentVideoIndex`          | `let`: Armazena o índice do vídeo a se exibido no array `allVideoMedia`. Este índece é **persistido no** `localStorage` para continuar a sequência após um recarregamento da página.
+| `currentImageIndex`          | `let`: Acompanha o índece da imagem atual sendo exibida dentro de uma campanha específica.
+| `sequenceIndex`              | `let`: Acompanha a posição atual no `displaySequence` (roteiro de exibição).
+| `autoSwapInterval`           | `let`: Armazena o ID do timer (`setTimeout` ou `setInterval`) para controlar a alternância entre os conteúdos.
+| `somEmitido`                 | `let`: Flag booleana para controlar se o som de notificação já foi emitido, evitando reprodução duplicadas.
+| `displaySequence`            | `const`: Um array que define a **ordem exata** dos estágios de exibição. Seus valores são identificadores para os tipos de conteúdo a serem mostrados.
+| `totalTablePages()`          | `const`: Uma função auxiliar que calcula o número total de páginas da tabela com base em `allRows.length` e `rowsPerPage`. Retorna no mínimo 1.
 
 ### 💻 Funções Auxiliares
 
+#### `displaySequence`
+
+Define um "roteiro" sequencial para o conteúdo. Cada item no array representa um estágio de exibição:
+
+- `'TABLE_PAGE'`: Exibe a página atual da tabela de pedidos. O sistema avança para a próxima página da tabela a cada vez que este estágio é alcançado.
+- `'VIDEO'`: Exibe um único vídeo do array `allVideoMedia`. A sequência avança quando o vídeo termina ou após `videoDisplayTime`. O índice do próximo vídeo a ser exibido é salvo no `localStorage`.
+- `'CAMPAIGN_1'`: Inicia a exibição sequencial de **todas as imagens** da `campanha1`.
+- `'CAMPAIGN_2'`: Inicia a exibição sequencial de **todas as imagens** da `campanha2`.
+- `'TABLE_REMAINDER'`: Exibe as páginas restantes da tabela que ainda não foram mostradas no ciclo atual, até que todas as páginas tenham sido percorridas.
+- `'RELOAD'`: Salva o estado atual (próximo vídeo) e recarrega a página. Isso reinicia o roteiro do início, mas com a continuidade de onde o último vídeo parou.
+
 #### `emitirSomSeHouverRetirar()`
 
-Verifica se alguma linha tem o atributo `data-retirar="sim"` e toca um som se ainda não tiver sido emitido.
+Percorre todas as linhas da tabela. Se encontrar uma linha com `data-retirar="sim"` e o som ainda não foi emitido (`somEmitido` for `false`), ele reproduz o áudio de notificação. A flag `somEmitido` é então definida como `true` para evitar repetições. Se nenhuma linha de retirada for encontrada, `somEmitido` é resetada para `false`.
 
 ---
 
 #### `loadTableData()`
 
-Carrega as linhas da tabela, ordena, exibe a página atual, inicializa os indicadores e toca o som se necessário.
+Inicializa a gestão dos dados da tabela:
+
+1. Popula o array `allRows` com todas as linhas do `tableBody`.
+2. Chama `ordenarTabela()` para aplicar a ordem de prioridade.
+3. Chama `setupCarouselIndicators()` para configurar os indicadores de paginação.
 
 #### `showPage(page)`
 
-Exibe apenas as linhas da página especificada. Oculta todas as outras.
+Responsável por exibir uma página específica da tabela:
 
-#### `nextTablePage()`
-
-Avança para a próxima página da tabela. Se estiver n última, volta à primeira.
+1. Calcula os índices de início e fim das linhas com base na `page` e `rowsPerPage`.
+2. Oculta todas as linhas da tabela.
+3. Remove a classe `hidden` das linhas que pertencem à página atual, tornando-as visíveis.
+4. Chama `updateActiveIndicator()` para destacar o indicador de paginação correspondente.
+5. Chama `emitirSomSeHouverRetirar()` para verificar a necessidade de reproduzir o áudio.
 
 #### `setupCarouselIndicators()`
 
-Cria indicadores clicáveis para as páginas da tabela.
+Cria e renderiza dinamicamente os indicadores de paginação na `paginationDiv`. Cada indicador é um `<span>` que visualmente representa uma página da tabela.
 
 #### `updateActiveIndicator()`
 
-Destaca visualmente o indicador da página atual.
+Atualiza o estado visual dos indicadores de paginação, adicionando ou removendo a classe `active` para destacar o indicador da `currentPage` atual.
 
 #### `ordenarTabela()`
 
-Ordena as linhas da tabela pela cor da prioridade
+Ordena as linhas da tabela (`allRows`) com base na prioridade definida pela cor (status do pedido), colocando os pedidos "prontos para retirada" (verdes) no topo, seguidos por "em conferência" (azul), "separados" (amarelo), "em separação" (laranja) e "a separar" (vermelho) por último. Após a ordenação, as linhas são removidas e reinseridas no `tableBody` na nova ordem.
 
-- Verde (1), Azul (2), Amarelo (3), Laranja (4), Vermelhor (5)
+#### `hideAllElements()`
 
-#### `hideAllElements()`, `showTableElements()`, `showImageElements(index)`
+Uma função utilitária que oculta todos os elementos principais da interface (cabeçalho e corpo da tabela, paginação, título de pedidos e o contêiner de slides de mídia). Também pausa e reinicia o tempo de todos os vídeos dentro do contêiner de mídia, garantindo que eles comecem do zero na próxima vez que forem exibidos.
 
-Controlam a visibilidade dos elementos da tela (tabela e imagens).
+#### `showTableElements()`
 
-### 🔁 Função Principal: `cybleDisplay()`
+Exibe os elementos relacionados à tabela de pedidos (cabeçalho, corpo, paginação e título), garantindo que os elementos de mídia estejam ocultos.
 
-Controla o que será ecibido a cada ciclo de tempo:
+#### `showImageElements(index, mediaArray)`
 
-- Se `isShowingTable == true`: exibe a próxima página da tabela
-    - Se estamos finalizando a exibição (`isFinishingTablePages`), continua mostrando até a última página e então recarrega a página com a próxima campanha.
-- Se `false`: exibe a próxima imagem da campanha
-    - Quando todas as imagens forem exibidas, entra no modo de finalização da tabela.
+Exibe um item de mídia específico (imagem ou vídeo) do `mediaArray` no `index` fornecido:
+
+1. Oculta todos os outros elementos da interface.
+2. Torna o `mediaSlidesContainer` visível e ativa o `mediaItem` correspondente ao `index`.
+3. Lógica de Vídeo e Tela Cheia:
+    - Se o item for um vídeo, ele tenta reproduzi-lo.
+    - Além disso, tenta colocar o `mediaSlidesContainer` em modo de tela cheia usando a API Fullscreen do navegador, proporcionando uma experiência de visualização imersiva para vídeos.
+
+### 🔁 Função de Lógica de Exibição
+
+#### `advanceSequence()`
+
+Esta função é a chave para o avanço no roteiro de exibição. Ela incrementa o `sequenceIndex` para o próximo estágio no `displaySequence` e chama `cycleDisplay()` para executar o novo estágio.
+
+#### `playCampaign(campaignMediaArray)`
+
+Gerencia a exibição sequencial de imagens de uma campanha:
+
+1. Verifica se a `campaignMediaArray` está vazia. Se estiver, pula para o próximo estágio do roteiro.
+2. Reseta `currentImageIndex` para 0.
+3. Define uma função interna `showNextImage()` que:
+    - Exibe a imagem atual usando `showMediaElement()`.
+    - Incrementa `currentImageIndex`.
+    - Agenda a próxima imagem via `setTimeout` com `imagemDisplayTime`.
+    - Quando todas as imagens da campanha forem exibidas, chama `advanceSequence()` para ir para o próximo estágio do roteiro.
+4. Inicia a exibição chamando `showNextImage()`.
+
+#### `playTableRemainder()`
+
+Responsável por exibir as páginas restantes da tabela até que todas as páginas tenham sido vistas, ou até que um ciclo completo seja concluído:
+
+1. Armazena a `currentPage` inicial.
+2. Define uma função interna `showNextPage()` que:
+    - Exibe os elementos da tabela e a `currentPage`.
+    - Avança `currentPage` para a próxima página (`% totalTablePages()`).
+    - A condição de parada ocorre quando todas as páginas foram exibidas (retornando à `startPage` ou se houver apenas uma página).
+    - Agenda a próxima página via `setTimeout` com `tabelaDisplayTime`.
+3. Inicia a exibição chamando `showNextPage()`.
+
+### 🔁 Função Principal de Ciclo (`cycleDisplay()`)
+
+Esta é a função central que orquestra todo o processo de exibição, baseando-se no `displaySequence`:
+
+1. Limpa qualquer timer (`setTimeout` ou `setInterval`) anterior para evitar execuções sobrepostas.
+2. Verifica se o `sequenceIndex` excedeu o tamanho do roteiro e, se sim, tenta forçar um recarregamento.
+3. Obtém o `currentStage` do `displaySequence`.
+4. Utiliza uma estrutura `switch` para executar a lógica correspondente a cada tipo de estágio:
+    - `'TABLE_PAGE'`: Exibe a página atual da tabela, avança a `currentPage` e agenda a `advanceSequence` após `tabelaDisplayTime`.
+    - `'VIDEO'`: Exibe o vídeo em `currentVideoIndex`. Salva o `currentVideoIndex` no `localStorage` para a próxima vez. A sequência avança quando o vídeo termina (`onended`) ou após `videoDisplayTime`, o que ocorrer primeiro.
+    - `'CAMPAIGN_1'`: Chama `playCampaign()` para iniciar a exibição da `campanha1`.
+    - `'CAMPAIGN_2'`: Chama `playCampaign()` para iniciar a exibição da `campanha2`.
+    - `'TABLE_REMAINDER'`: Chama `playTableRemainder()` para exibir o restante das páginas da tabela.
+    - `'RELOAD'`: Recarrega a página. Isso permite que o roteiro seja reiniciado do começo, enquanto a persistência do `currentVideoIndex` via `localStorage` mantém a continuidade dos vídeos.
 
 ### 🎯 Função de Inicialização: `startAutoSwap()`
 
-Reseta todos os estados e inicia o ciclo de exibição, carregando:
+Esta função é o ponto de partida do script, sendo chamada assim que o DOM está pronto:
 
-- Página 0 da tabela
-- Imagem 0 da campanha atual
-- Lista de imagens da campanha
-
-Se nenhuma imagem da campanha atual for encontrada, tenta a outra campanha.
+1. Carrega o estado do vídeo: Recupera o `currentVideoIndex` do `localStorage` (ou define como 0 se não encontrado).
+2. Popula arrays de mídia: Preenche `allVideoMedia`, `allImageMedia_Campaign1` e `allImageMedia_Campaign2` com os elementos de mídia correspondentes.
+3. Chama `loadTableData()` para preparar a tabela.
+4. Define `sequenceIndex` como 0 (início do roteiro).
+5. Inicia o ciclo de exibição chamando `cycleDisplay()`.
 
 ### 🖥️ Evento `DOMContentLoaded`
 
-Ao carregar a página:
+Este é o ponto de entrada principal do script, garantindo que o código seja executado somente após o carregamento completo do DOM:
 
-- Verifica no `localStorage` se havia uma campanha em andamento
-- Define a campanha corrente
-- Inicia o ciclo com `startAutoSwap()`
-
-### 💻 Lógica de Campanha
-
-- As imagens da campanha atual são exibidas uma a uma
-- Após exibir todas as imagens de uma campanha:
-    - A tabela volta a ser exibida até a última página.
-    - Em seguida, o ciclo reinicia com a **outra campanha ( 1 ou 2)** e a página é recarregada.
-
-### 🔁 Armazenamento Temporário (localStorage)
-
-- `currentCampaign`: Salva qual campanha será usada após recarregar.
-- É **limpo automaticamente** no primeiro carregamento após salvar, garantindo que o usuário sempre veja a campanha 1 em um reload manual.
+1. **Verificações Essenciais**: Realiza uma verificação crucial para garantir que todos os elementos HTML necessários estejam presentes na página. Se algum elemento faltar, um erro é registrado no console e o script é interrompido para evitar falhas.
+2. Chama a função `start()` para iniciar todo o processo de inicialização e o ciclo de exibição.
 
 ## painel.js
 
-Este script é responsável por adicionar um evento de clique aos ícones de lixeira (com a classe `.remover-imagem`) em no painel do sistema. Ao clicar no ícone, o script redireciona o usuário para uma URL responsável por remover o item correspondente do sistema, passando o nome do arquivo como parâmetro de consulta.
+Este script JavaScript é responsável por habilitar a funcionalidade de **exclusão de itens de mídia** (tanto imagens quanto vídeos) diretamente do painel de gerenciamento. Ele faz isso ao adicionar ouvintes de evento de clique aos ícones de lixeira visíveis na interface. Quando um desses ícones é clicado, o script coleta as informações necessárias sobre o item de mídia e redireciona o navegador para uma URL específica no backend, que é responsável por realizar a remoção.
 
-### ⚙️ Estrutura e Funcionamento
+### ⚙️ Estrutura e Funcionamento Detalhado
+O script opera dentro do evento `DOMContentLoaded`, garantindo que todo o HTML da página esteja completamente carregado e acessível antes que qualquer manipulação de elementos ocorra.
 
-#### Evento `DOMContentLoaded`
-
+1. **Seleção de Elementos de Remocação**
 ```
-document.addEventListener('DOMContentLoaded', function() { ... });
-```
-
-- Garante que o script seja executado **somente após o carregamento completo do DOM**.
-- Isso evita erros ao tentar selecionar elementos que ainda não foram renderizados.
-
-#### Seleção de elementos com `.remover-imagem`
-
-```
-const removerImagens = document.querySelectorAll('.remover-imagem');
+const removerMediaButtons = document.querySelectorAll('.remover-media');
 ```
 
-- Seleciona todos os elementos que possuem a classe `remover-imagem`.
-- Esses elementos são presumivelmente ícones de lixeira ou botões usados para remover imagens.
+Ao carregar a página, o script seleciona todos os elementos que possuem a classe CSS `.remover-media`. No contexto do painel, esses são os ícones de lixeira (`<i>`) associados a cada imagem e vídeo que o usuário pode gerenciar. A variável `removerMediaButtons` armazena uma `NodeList` (semelhante a um array) desses elementos.
 
-#### Adição do evento de clique
-
+2. **Adição de Evento de Clique**
 ```
-removerImagens.forEach(remover => {
-    remover.addEventListener('click', function(event) { ... });
+removerMediaButtons.forEach(button => {
+    button.addEventListener('click', function(event) {
+        // ... lógica de remoção ...
+    });
 });
 ```
 
-- Para cada botão de remoção encontrado:
-    - Um **ouvinte de evento de clique** é adicionado.
-    - Quando clicado, aa função de remover a imagem será executada.
+O script então percorre cada botão de remoção encontrado na `removerMediaButtons` e adiciona um **ouvinte de evento de clique** a cada um. Isso significa que, sempre que um usuário clica em um ícone de lixeira, a função definida dentro do `addEventListener` será executada.
 
-#### Cancelamento do comportamento padrão
-
+3. **Prevenção do Comportamento Padrão**
 ```
-event.preventDefault();
+event.preventDefault(); // Evita qualquer comportamento padrão do elemento
 ```
 
-- Impede a ação padrão do elemento, como seguir o link se for uma tag `<a>`.
-- Isso permite o controle completo do que acontece após o clique.
+Dentro da função de clique, `event.preventDefault()` é chamado. Esta é uma etapa crucial que **interrompe qualquer ação** padrão que o navegador executaria para o elemento clicado (por exemplo, se fosse um link `<a>`, ele impediria a navegação para o `href`). Isso dá ao script controle total sobre a ação de remoção.
 
-#### Obtenção do nome do arquivo
-
+4. **Obtenção de Atributos de dados**(`data-*`)
 ```
 const filename = this.dataset.filename;
+const fileType = this.dataset.type;   // 'image' ou 'video'
+const folderName = this.dataset.folder; // 'campanha1', 'campanha2' ou 'video'
 ```
 
-- Obtém o valor do atributo `data-filename` do elemento clicado.
-- Este valor é o **nome da imagem** a ser removida.
+Ao invés de depender apenas do nome do arquivo, o script agora extrai múltiplos atributos `data-*` do elemento que foi clicado (`this` refere-se ao próprio botão/ícone clicado). Esses atributos são:
 
-#### Redirecionamento para endpoint de remoção
+- `filename`: O nome completo do arquivo a ser removido (ex: `minha_foto.jpg`, `meu_filme.mp4`).
+- `fileType`: Indica o tipo de mídia (`'image'` para imagens ou `'video'` para vídeos).
+- `folderName`: Especifica a pasta onde o arquivo está localizado. Para imagens, será o nome da campanha (ex: `'campanha1'`, `'campanha2'`). Para vídeos, o valor é `'video'`.
+- Esses dados são **essenciais** para que o backend possa localizar e remover o arquivo correto de forma segura e precisa.
 
+5. **Redirecionamento para o Endpoint de Remoção**
 ```
-window.location.href = `/remover_item?filename=${filename}`;
-```
-
-- Redireciona o navegador para a URL de remoção.
-- O backend (em `/remover_item`) deve tratar a lógica de remoção da imagem com base no parâmetro `filename`.
-
-#### Tratamento de erro
-
-```
-console.error('Nome do arquivo não encontrado no ícone de lixeira.');
-alert('Erro: Nome do arquivo da imagem não foi encontrado.');
+if (filename && fileType && folderName) {
+    window.location.href = `/remover_item?filename=${filename}&file_type=${fileType}&folder=${folderName}`;
+} else {
+    // ... tratamento de erro ...
+}
 ```
 
-- Se `filename` estiver ausente, uma mensagem de erro será exibida no console.
-- Um alerta também é mostrado ao usuário para avisá-lo do problema.
+Após coletar as informações necessárias, o script verifica se todos os dados (`filename`, `fileType`, `folderName`) estão presentes. Se estiverem, ele redireciona o navegador para a URL `/remover_item`. Os dados coletados são passados como parâmetros de consulta na URL.
 
----
+É o **backend da aplicação** que deve ter uma rota configurada para `/remover_item`. Esta rota receberá os parâmetros e será responsável por:
+    - Validar a requisição.
+    - Localizar o arquivo correspondente no servidor, utilizando o nome do arquivo, seu tipo e a pasta.
+    - Remover fisicamente o arquivo do sistema de arquivos do servidor.
+    - Gerenciar a resposta ao usuário (por exemplo, redirecionar de volta para o painel ou exibir uma mensagem de sucesso/erro).
 
-### 📂 Requisitos para funcionamento
+6. **Tratamento de Erro (Local no Frontend)**
+```
+else {
+    console.error('Dados incompletos para remover o item:', { filename, fileType, folderName });
+    alert('Erro: Não foi possível obter todas as informações necessárias para remover o arquivo.');
+}
+```
 
-- Os ícones de remoção devem conter o atributo `data-filename`, como no exemplo:
+Caso um ou mais dos atributos `data-*` (filename, fileType, folderName) estejam ausentes no elemento clicado, o script impede o redirecionamento. Em vez disso, ele registra uma mensagem de erro detalhada no console do navegador e exibe um alerta amigável ao usuário, indicando que a remoção não pôde ser processada devido à falta de informações.
+
+### 📂 Requisitos para Funcionamento Adequado
+Para que o script `painel.js` funcione corretamente, é fundamental que os elementos de ícone de lixeira no seu `painel.html` sigam esta estrutura, incluindo os atributos de dados (`data-*`) necessários:
 
 ```
-<i class="fa-solid fa-trash remover-imagem" data-filename="{{ imagem.filename }}"></i>
+<i class="fa-solid fa-trash remover-media"
+   data-filename="minha_foto_legal.jpg"
+   data-type="image"
+   data-folder="campanha1">
+</i>
+
+<i class="fa-solid fa-trash remover-media"
+   data-filename="video_institucional.mp4"
+   data-type="video"
+   data-folder="video">
+</i>
 ```
+
+Isso garante que o JavaScript possa identificar corretamente qual arquivo remover e de qual local
